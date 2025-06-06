@@ -8,7 +8,6 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-
 	"todo/internal/server"
 )
 
@@ -38,7 +37,6 @@ func gracefulShutdown(apiServer *http.Server, done chan bool) {
 }
 
 func main() {
-
 	server := server.NewServer()
 
 	// Create a done channel to signal when the shutdown is complete
@@ -48,6 +46,7 @@ func main() {
 	go gracefulShutdown(server, done)
 
 	err := server.ListenAndServe()
+
 	if err != nil && err != http.ErrServerClosed {
 		panic(fmt.Sprintf("http server error: %s", err))
 	}
