@@ -48,6 +48,8 @@ func main() {
 
 	if err != nil && err != http.ErrServerClosed {
 		panic(fmt.Sprintf("http server error: %s", err))
+	} else {
+		fmt.Println("Server is running at ", server.Addr)
 	}
 
 	// Wait for the graceful shutdown to complete
