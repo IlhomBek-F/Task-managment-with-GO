@@ -1,6 +1,7 @@
 package server
 
 import (
+	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -67,6 +68,21 @@ func (s *Server) Create(c echo.Context) error {
 
 	if insertError != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": insertError.Error()})
+	}
+
+	return c.JSON(http.StatusCreated, map[string]todos.Todo{"success": todo})
+}
+
+func (s *Server) GetById(c echo.Context) error {
+	id := c.Param("id")
+	row := s.db.QueryRow("SELECT title, completed, id, created_at, updated_at FROM todos WHERE id = $1", id)
+	var todo todos.Todo
+	err := row.Scan(&todo.Title, &todo.Completed, &todo.ID, &todo.CreatedAt, &todo.UpdatedAt)
+
+	if err == sql.ErrNoRows {
+		return c.JSON(http.StatusNotFound, map[string]string{"error": "Todo not found"})
+	} else if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
 	return c.JSON(http.StatusCreated, map[string]todos.Todo{"success": todo})

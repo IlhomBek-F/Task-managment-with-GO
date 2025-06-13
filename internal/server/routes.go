@@ -20,8 +20,9 @@ func (s *Server) RegisterRoutes() http.Handler {
 		MaxAge:           300,
 	}))
 
-	e.GET("/", s.Index)
-	e.POST("/", s.Create)
+	e.GET("/api/todos", s.Index)
+	e.POST("/api/create", s.Create)
+	e.GET("/api/:id", s.GetById)
 	// e.GET("/hello", s.HealthHandler)
 
 	return e
