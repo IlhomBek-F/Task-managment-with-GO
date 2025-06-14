@@ -23,6 +23,8 @@ func (s *Server) RegisterRoutes() http.Handler {
 	e.GET("/api/todos", s.Index)
 	e.POST("/api/create", s.Create)
 	e.GET("/api/:id", s.GetById)
+	e.PUT("/api/update/:id", s.Update)
+	e.DELETE("/api/delete/:id", s.Delete)
 	// e.GET("/hello", s.HealthHandler)
 
 	return e

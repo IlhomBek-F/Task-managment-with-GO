@@ -88,6 +88,33 @@ func (s *Server) GetById(c echo.Context) error {
 	return c.JSON(http.StatusCreated, map[string]todos.Todo{"success": todo})
 }
 
+func (s *Server) Update(c echo.Context) error {
+	id := c.Param("id")
+
+	var todo todos.Todo
+	_ = json.NewDecoder(c.Request().Body).Decode(&todo)
+
+	_, err := s.db.Exec("UPDATE todos SET title = $1, completed = $2 WHERE id = $3", todo.Title, todo.Completed, id)
+
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusCreated, map[string]string{"success": "updated todo"})
+}
+
+func (s *Server) Delete(c echo.Context) error {
+	id := c.Param("id")
+
+	_, err := s.db.Exec("DELETE FROM todos WHERE id = $1", id)
+
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{"status": "Success", "message": "Successfully deleted"})
+}
+
 // func (s *Server) HealthHandler(c echo.Context) error {
 // 	return c.JSON(http.StatusOK, s.db.Health())
 // }
