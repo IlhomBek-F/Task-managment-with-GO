@@ -2,7 +2,9 @@ package server
 
 import (
 	"net/http"
+	"todo/todos"
 
+	"github.com/go-playground/validator"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"golang.org/x/time/rate"
@@ -10,6 +12,7 @@ import (
 
 func (s *Server) RegisterRoutes() http.Handler {
 	e := echo.New()
+	e.Validator = &todos.CustomValidator{Validator: validator.New()}
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Use(middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(rate.Limit(10))))

@@ -1,24 +1,37 @@
 package todos
 
 import (
-	"errors"
+	"net/http"
 	"time"
+
+	"github.com/go-playground/validator"
+	"github.com/labstack/echo"
 )
 
-type Todo struct {
-	ID        uint      `json:"id"`
-	Title     string    `json:"title"`
-	Completed bool      `json:"completed"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-func (t Todo) Validate() error {
-	var err error
-
-	if len(t.Title) == 0 {
-		err = errors.New("title can't be blank")
+type (
+	Todo struct {
+		ID        uint      `json:"id"`
+		Title     string    `json:"title" validate:"required"`
+		Completed *bool     `json:"completed" validate:"required"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
 	}
 
-	return err
+	UpdateTodo struct {
+		ID        uint   `json:"id" validate:"required,gt=0"`
+		Title     string `json:"title" validate:"required"`
+		Completed *bool  `json:"completed"`
+	}
+
+	CustomValidator struct {
+		Validator *validator.Validate
+	}
+)
+
+func (cv *CustomValidator) Validate(i interface{}) error {
+	if err := cv.Validator.Struct(i); err != nil {
+		// Optionally, you could return the error to give each route more control over the status code
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	return nil
 }

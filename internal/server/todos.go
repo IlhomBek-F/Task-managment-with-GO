@@ -2,7 +2,6 @@ package server
 
 import (
 	"database/sql"
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
@@ -30,7 +29,7 @@ func (s *Server) Index(c echo.Context) error {
 
 	var (
 		name       string
-		completed  bool
+		completed  *bool
 		idTodo     uint
 		created_at time.Time
 		updated_at time.Time
@@ -62,19 +61,20 @@ func (s *Server) Index(c echo.Context) error {
 func (s *Server) Create(c echo.Context) error {
 	var todo todos.Todo
 
-	err := json.NewDecoder(c.Request().Body).Decode(&todo)
+	err := c.Bind(&todo)
 
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response{Status: http.StatusInternalServerError, Res: map[string]interface{}{"error": "Internal server error"}})
+		return c.JSON(http.StatusInternalServerError, response{Status: http.StatusInternalServerError, Res: map[string]interface{}{"error": err.Error()}})
 	}
 
-	creationError := todo.Validate()
+	creationError := c.Validate(todo)
 
 	if creationError != nil {
 		return c.JSON(http.StatusUnprocessableEntity, response{Status: http.StatusUnprocessableEntity, Res: map[string]interface{}{"error": creationError.Error()}})
 	}
 
-	_, insertError := s.db.Query(`INSERT INTO todos (title, completed) VALUES ($1, $2)`, todo.Title, todo.Completed)
+	insertError := s.db.QueryRow(`INSERT INTO todos (title, completed) VALUES ($1, $2) RETURNING id, title, completed, created_at, updated_at`,
+		todo.Title, todo.Completed).Scan(&todo.ID, &todo.Title, &todo.Completed, &todo.CreatedAt, &todo.UpdatedAt)
 
 	if insertError != nil {
 		return c.JSON(http.StatusInternalServerError, response{Status: http.StatusInternalServerError, Res: map[string]interface{}{"error": insertError.Error()}})
@@ -120,8 +120,14 @@ func (s *Server) Update(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, map[string]string{"error": "Todo not found"})
 	}
 
-	var todo todos.Todo
-	_ = json.NewDecoder(c.Request().Body).Decode(&todo)
+	var todo todos.UpdateTodo
+	_ = c.Bind(&todo)
+
+	updateError := c.Validate(todo)
+
+	if updateError != nil {
+		return c.JSON(http.StatusUnprocessableEntity, response{Status: http.StatusUnprocessableEntity, Res: map[string]interface{}{"error": updateError.Error()}})
+	}
 
 	_, err := s.db.Exec("UPDATE todos SET title = $1, completed = $2 WHERE id = $3", todo.Title, todo.Completed, id)
 
@@ -163,7 +169,3 @@ func (s *Server) isExistTodo(id int) bool {
 
 	return err == nil
 }
-
-// func (s *Server) HealthHandler(c echo.Context) error {
-// 	return c.JSON(http.StatusOK, s.db.Health())
-// }
